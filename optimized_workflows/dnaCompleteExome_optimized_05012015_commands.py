@@ -2,7 +2,7 @@
 #!/usr/bin/env python
 
 """
-Runs the Meissnert SNPiR RNA-variant discovery pipeline in optimized mode in one Node
+Runs GATK based exome variant discovery pipeline in optimized mode on one node
 See below for options
 """
 
@@ -19,12 +19,13 @@ def create_wf_meta(options, output_dir, tmp_dir):
 
     # get ncores
     ncpu = get_ncores()
-    nthreads = ncpu/2
+    nthreads = ncpu/2 ## should this be ncpu*2??
 
     # get memory
     jvm_heap = get_linuxRAM()
 
     # get the reference datasets
+    ## Note: later versions of DB's are available and we might want to update, lets discuss
     reference_db = options.gatk_ref
     dbsnp="/mnt/galaxyIndices/genomes/Hsapiens/human_g1k_v37/annotation/dbsnp_138.b37.vcf"
     mills="/mnt/galaxyIndices/genomes/Hsapiens/human_g1k_v37/annotation/Mills_and_1000G_gold_standard.indels.b37.vcf"
@@ -58,7 +59,7 @@ def create_wf_meta(options, output_dir, tmp_dir):
 
     #
     step = 0
-    ncpu_step = int(ncpu) - 2
+    ncpu_step = int(ncpu) - 2 ## Why substract 2 here?
     command_meta[step] = []
     input1 = fastq
     input2 = rfastq
@@ -104,7 +105,7 @@ def create_wf_meta(options, output_dir, tmp_dir):
     outputMetrics = "%s/%s-SM1.dups" % (output_dir, sample_name)
     input_files = [inputF]
     output_files = [outputF, outputMetrics]
-    cmd = "python /opt/galaxy/tools/picard/picard_wrapper.py --maxjheap %sm -i %s -n Dupes_Marked --tmpdir %s -o %s --remdups true --assumesorted true --readregex \"[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*\" --optdupdist 100 -j \"%s/picard.jar MarkDuplicates\" -d %s -t %s -e bam" % (jvm_heap, inputF, tmp_dir, outputF, JAVA_JAR_PATH, tmp_dir, outputMetrics)
+    cmd = "python /opt/galaxy/tools/picard/picard_wrapper.py --maxjheap %sm -i %s -n Dupes_Marked --tmpdir %s -o %s --remdups false --assumesorted true --readregex \"[a-zA-Z0-9]+:[0-9]:([0-9]+):([0-9]+):([0-9]+).*\" --optdupdist 100 -j \"%s/picard.jar MarkDuplicates\" -d %s -t %s -e bam" % (jvm_heap, inputF, tmp_dir, outputF, JAVA_JAR_PATH, tmp_dir, outputMetrics)
     command_meta[step].append({"cl":cmd, "input_files":input_files, "output_file":outputF, "output_files":output_files})
 
     #
